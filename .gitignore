@@ -1,4 +1,4 @@
-*.sh
+*.out
 vorticitydata/
 sleout/
 binaryfieldout/
