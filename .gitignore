@@ -1,0 +1,7 @@
+*.sh
+vorticitydata/
+sleout/
+binaryfieldout/
+pressuredata/
+__pycache__/
+
