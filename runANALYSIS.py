@@ -1,4 +1,5 @@
-# making Francisco's ipynb into a python script
+# making Francisco's ipynb into a python script, Lasse
+# please choose options and data at beginning of main
 
 import numpy as np
 import glob
@@ -8,7 +9,7 @@ from scipy.stats import norm,sem
 import matplotlib.pyplot as plt
 import matplotlib
 import math
-import cv2 
+#import cv2 
 from collections import deque
 import numexpr as ne
 import scipy
@@ -91,10 +92,21 @@ def SLE_Trace(foldertypeanal):
     Data_list=glob.glob(str(folder)+f"/{type_anal}/*")
     for i,link in enumerate(Data_list): # for file
         
-        data=np.load(link)
+        try:
+            data=np.load(link)
+        except ValueError: 
+            data = np.load(link)
+        except UnicodeDecodeError:
+            data = np.load(link)
+        except ValueError: #not gna get used
+            data = np.loadtxt(link, delimiter=',')
+        
+        data = data.astype('int')
+
         #data=1-np.where(data==-1, 0, data)
         data=np.where(data==-1, 0, data)
         data2=data.copy()
+
         for angle in [0,90]: # do it at different rotations
             data3=data2.copy()
             data3=rotate_matrix(data3, angle)
@@ -106,8 +118,9 @@ def SLE_Trace(foldertypeanal):
             sorted_list = [counter2[i] for i in indices]
             for j,counter in enumerate(sorted_list):
                 if j<1: # just take the first (longest)
-                    X_curve_final.append(counter[:, 1]-counter[0, 1])
+                    X_curve_final.append(counter[:, 1]-counter[0, 1]) # why only subtract from x?? (maybe y[0] is already 0)
                     Y_curve_final.append(counter[:, 0])
+            print(link, len(X_curve_final), flush=True)
             del indices,sorted_list,contours
    
     return  X_curve_final,Y_curve_final
@@ -415,7 +428,21 @@ def directsle(X,Y,t_max):
             break
     
     return t_list, u_list
+"""
+def noise_plot(X, Y, t_max):
 
+    T_sample=[]
+    W_T_sample=[]
+
+    ctraces = X + 1j*Y
+    for ctrace in ctraces:
+        drive, drivetime = sle.measure.driving_function(ctrace)
+        cut = np.min(np.argwhere(drivetime>t_max))
+        T_sample.append(drivetime[:cut])
+        W_T_sample.append(drive[:cut])
+        
+    return np.array(pad_ragged(T_sample)),np.array(pad_ragged(W_T_sample))
+"""
 def noise_plot(loops_to_save_half_plane,t_max):
     X_curve_final,Y_curve_final=loops_to_save_half_plane
     T_sample=[]
@@ -425,10 +452,11 @@ def noise_plot(loops_to_save_half_plane,t_max):
 
         
         T,W_T=directsle(X,Y,t_max)
-        if T[-1]>t_max:
+        if T[-1]>t_max: # ? 
             T_sample.append(T)
             W_T_sample.append(W_T)
     return np.array(pad_ragged(T_sample)),np.array(pad_ragged(W_T_sample))
+
 
 def c_auxiliar(a,b,c,d,e):
     return (a-b*c)/(((d-b**2)*(e-c**2))**0.5)
@@ -506,52 +534,82 @@ def descretize_sample(T_sample,W_T_sample,T_save):
 
 if __name__ == '__main__':
 
-    type_anal = 'vorticity',#pressure'#binary_vorticity' # pressure
+    ##OPTIONS
+    multi = True # use multiprocessing?
+
+    clean = False # clean out directories (fresh calculation)
+    overwrite = False # overwrite existing files?
+    
+    do_chunks = True # subdivide long traces for statistics purposes (when low on data)
+
+
+    #type_anal - will look into folders with this name (so you could just as well look at pressure or anything)
+    type_anal = 'vorticity'
+    #type_anal = 'pressure'  # '#binary_vorticity' # pressure
+    #type_anal = 'binary_vorticity'
+
+    ##FILE ORIGIN
+    # files should be as foldername/{type_anal}/*.npy 
+    # glob folder/* will take all files in folder
+    # otherwise do names = ['folder'] to do individual folders
+
+
     #names = glob.glob('/groups/astro/rsx187/isolinescaling/pressuredata/simon_data/*/*')
     #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/pressuredata/simon_data/*/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/simon_data/*/*')
-    names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/grf/*')
+    #
+    names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/grf3/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/pressuredata/colloids_sourav/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/varunBactTurb/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/backofen/Forcing_2.5_friction/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/compressibleAN/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/PIV_mol.perturb/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/u_sample/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/CompressibleAN/out*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/Valeriia_tracking/*')
+
     #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/vorticitydata/wensink2012/3d_data_piv/*')
     #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/data-nematic')
+    #names = glob.glob('/groups/astro/adoostmo/projects/SLE/data-nematic/')
+    #names = glob.glob('/groups/astro/adoostmo/projects/SLE_Lasse/compressibleAN/*')
     #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/vorticitydata/Stress_Density_PIV_Tracking/*')
+
+    names = names[:5]
+    # checks and cleaning
     assert len(names)>0, f'0 names: {names}'
     names = [name for name in names if 'README' not in name]
-    FOLDER = names
-    #FOLDER = [n for n in names if '0.04_' in n]
-    #
-    #FOLDER = [n for n in FOLDER if 'counter_4' in n]
-    #FOLDER =[n for n in FOLDER if '2048' in n] 
+    names = [name for name in names if '.ipynb' not in name]
+    names = [name for name in names if 'perimvsgyrout' not in name]
 
-
-    print(FOLDER)
-    multi = True
-
-    clean = True
-    overwrite = False
+    #choosing specific files
+    #names = [name for name in names if 'data_pow' in name]
     
-    do_chunks = True
+    FOLDER = names
+    print(FOLDER, flush=True)
+
+
 
     for f in FOLDER: # plain vorticity / pressure folders
         if f.endswith(type_anal):
             FOLDER.remove(f)
-            print('removed:', f )
+            print('removed:', f , flush=True)
 
     if not overwrite:
         for n in FOLDER:
             if os.path.isfile(n+'/correlation.npy'):
                 FOLDER.remove(n)
-                print(n)
-    print('n files:', len(FOLDER))
+                print(n, flush=True)
+    print('n files:', len(FOLDER), flush=True)
 
     if clean:
         clean_func(FOLDER) # clean out dest folders
     #sys.exit()
-    print('start')
+    print('start', flush=True)
 
     if not multi:
         #get trace
         for folder in FOLDER:
-            Trace=SLE_Trace(folder)
+            Trace=SLE_Trace([folder, type_anal])
             # obviously the traces are not all the same length so np.array() doesn't work
             # I'm going to just pad with nan lets see.
             
@@ -560,7 +618,7 @@ if __name__ == '__main__':
             del Trace
             del arTrace
 
-        print('done traces')
+        print('done traces', flush=True)
         #DF
         for folder in FOLDER:
            #print(folder)
@@ -569,7 +627,7 @@ if __name__ == '__main__':
            np.save(str(folder)+"/df.npy",np.array([L_stick, *num_sticks_final]))
            
            del X_ALL_loops,Y_ALL_loops
-        print('done DF')
+        print('done DF', flush=True)
 
         CUT=[400,400,400,400]
         #DF*
@@ -579,7 +637,7 @@ if __name__ == '__main__':
             L_stick,num_sticks_final=df_last(X_ALL_loops,Y_ALL_loops,cut)
             np.save(str(folder)+"/df_last.npy",np.array([L_stick, *num_sticks_final]))
             del X_ALL_loops,Y_ALL_loops
-        print('done DF*')
+        print('done DF*', flush=True)
 
         cut = 1000
         
@@ -590,7 +648,7 @@ if __name__ == '__main__':
            L_list,THETA_list=winding_statistics(loops_to_save, cut=cut, do_chunks=do_chunks)
            np.save(str(folder)+"/winding.npy",np.array([L_list,*THETA_list]))
            del loops_to_save
-        print('done wind')
+        print('done wind', flush=True)
 
         for folder in FOLDER:
            L_list=[80,500]
@@ -600,7 +658,7 @@ if __name__ == '__main__':
                np.save(str(folder)+"/windingmormaml_L="+str(L)+".npy",np.array([L,*THETA_forL]))
                del loops_to_save
                del THETA_forL
-        print('done wind pdf')
+        print('done wind pdf', flush=True)
 
         for folder in FOLDER:
             X_ALL_loops,Y_ALL_loops=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
@@ -616,7 +674,7 @@ if __name__ == '__main__':
             del PHASE,Score_final
             del X_ALL_loops
             del Y_ALL_loops
-        print('done left passage')
+        print('done left passage', flush=True)
 
         for folder in FOLDER:
             loops_to_save_half_plane=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
@@ -625,7 +683,7 @@ if __name__ == '__main__':
 
             np.save(str(folder)+"/noise.npy",np.array([T_sample,W_T_sample]))
             del T_sample,W_T_sample,loops_to_save_half_plane
-        print('done drive')
+        print('done drive', flush=True)
 
         for folder in FOLDER:
             list_t=np.arange(0,20,1)
@@ -641,12 +699,12 @@ if __name__ == '__main__':
             Error2,c_list_final=c_different_tau_average_in_t(list_t,lista_tau,W_T_sample_dis) 
             res = np.array(pad_ragged([T_save,Error2,c_list_final]))
             np.save(str(folder)+"/correlation.npy", res)
-        print('done correlation')
+        print('done correlation', flush=True)
 
 
     else:
         ncpu=min(int(os.environ['SLURM_CPUS_PER_TASK']), len(FOLDER))
-        print(f'ncpu: {ncpu}')
+        print(f'ncpu: {ncpu}', flush=True)
         def do_trace(foldertypeanal):
             folder, type_anal = foldertypeanal
             if not overwrite:
@@ -654,17 +712,18 @@ if __name__ == '__main__':
                     return
 
             Trace=SLE_Trace(foldertypeanal)
-            print(folder)
+            print(folder, flush=True)
             # obviously the traces are not all the same length so np.array() doesn't work
             # I'm going to just pad with nan lets see.
+            print(Trace, flush=True)
             try:
                 arTrace = np.array(trace_pad(Trace)) 
             except ValueError:
-                print(f'ValueError for padding {folder} trace, len trace {len(Trace)}') # why? - no traces?
+                print(f'ValueError for padding {folder} trace, len trace {len(Trace)}', flush=True) # why? - no traces?
                 return folder
             #arTrace = np.array([0])
             #FOLDER.remove(folder)
-            print(f'done {folder}')
+            print(f'done {folder}', flush=True)
             np.save(str(folder)+"/SLE_Trace.npy",arTrace)
             #del Trace
             #del arTrace
@@ -677,7 +736,7 @@ if __name__ == '__main__':
                     FOLDER.remove(folder)
                 except:
                     pass
-        print('done SLE')
+        print('done SLE', flush=True)
 
         def do_DF(folder):
             if not overwrite:
@@ -689,23 +748,22 @@ if __name__ == '__main__':
             #del X_ALL_loops,Y_ALL_loops
         with Pool(ncpu) as p:
             p.map(do_DF, FOLDER)
-        print('done DF')
+        print('done DF', flush=True)
 
 
-        CUT=[400,400,400,400]
+        #CUT=[400,400,400,400]
         #DF*
-
-        def do_DFstar(folder, cut):
-            if not overwrite:
-                if os.path.isfile(str(folder)+"/df_last.npy"):
-                    return
-            X_ALL_loops,Y_ALL_loops=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
-            L_stick,num_sticks_final=df_last(X_ALL_loops,Y_ALL_loops,cut)
-            np.save(str(folder)+"/df_last.npy",np.array([L_stick, *num_sticks_final]))
+        #def do_DFstar(folder, cut):
+        #    if not overwrite:
+        #        if os.path.isfile(str(folder)+"/df_last.npy"):
+        #            return
+        #    X_ALL_loops,Y_ALL_loops=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
+        #    L_stick,num_sticks_final=df_last(X_ALL_loops,Y_ALL_loops,cut)
+        #    np.save(str(folder)+"/df_last.npy",np.array([L_stick, *num_sticks_final]))
             #del X_ALL_loops,Y_ALL_loops
-        with Pool(ncpu) as p:
-            p.starmap(do_DFstar, zip(FOLDER, CUT))
-        print('done DF*')
+        #with Pool(ncpu) as p:
+        #    p.starmap(do_DFstar, zip(FOLDER, CUT))
+        #print('done DF*')
 
         cut = 1000
         def do_winding(folder, cut, do_chunks):
@@ -715,7 +773,7 @@ if __name__ == '__main__':
             #del loops_to_save
         with Pool(ncpu) as p:
             p.starmap(do_winding, zip(FOLDER, np.repeat(cut, len(FOLDER)), np.repeat(do_chunks, len(FOLDER)) ))
-        print('done winding')
+        print('done winding', flush=True)
 
         #winding gaussianity
 
@@ -729,7 +787,7 @@ if __name__ == '__main__':
                 #del THETA_forL
         with Pool(ncpu) as p:
             p.map(do_winding_pdf, FOLDER)
-        print('done winding pdf')
+        print('done winding pdf', flush=True)
 
         #left passage
 
@@ -749,7 +807,7 @@ if __name__ == '__main__':
             #del Y_ALL_loops
         with Pool(ncpu) as p:
             p.map(do_left_passage, FOLDER)
-        print('done left passage')
+        print('done left passage', flush=True)
 
         # drive and drivetimes
        
@@ -762,7 +820,7 @@ if __name__ == '__main__':
             #del T_sample,W_T_sample,loops_to_save_half_plane
         with Pool(ncpu) as p:
             p.map(do_driving, FOLDER)
-        print('done drive')
+        print('done drive', flush=True)
 
 
         # correlation time
@@ -785,4 +843,4 @@ if __name__ == '__main__':
         with Pool(ncpu) as p:
             p.map(do_correlation, FOLDER)
 
-        print('done correlation')
+        print('done correlation', flush=True)

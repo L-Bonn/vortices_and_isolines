@@ -1,0 +1,5 @@
+113K	__pycache__/
+4.4M	binaryfieldout/
+4.4G	pressuredata/
+3.0M	sleout/
+829M	vorticitydata/

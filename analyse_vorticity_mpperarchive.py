@@ -8,13 +8,13 @@ import pickle
 from multiprocessing import Pool
 from pathlib import Path
 import glob
-sys.path.append('/groups/astro/rsx187/massPynpz')
-import massPynpz as mp
-#import massPy as mp
+#sys.path.append('/groups/astro/rsx187/massPynpz')
+#import massPynpz as mp
+import massPy as mp
 import copy
 import json
 from random import shuffle
-
+from datetime import datetime
 """
 def vortandE(vx, vy, return_terms=False):
     dxux = mp.base_modules.numdiff.gradient(vx, axis=1)
@@ -156,9 +156,9 @@ def anisotropy(labelled_image, values):
 
 #     return vortsum, [vortcounts, vortbins], vorticity_area_ratio, [number_n, number_p], [anisotropy_n, anisotropy_p]
 
-def do_all(path=None, out=None, r=0.05, connectivity=1, method="extremal", Othold=0.52, Qthold=0, do_area=False):
+def do_all(path=None, out=None, r=0.05, connectivity=1, method="extremal", Othold=0.52, Qthold=0, do_area=False, do_orientation=False):
     #path, out = pathnameout
-    print(f'starting {path}')
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, starting {path}')
     tn, tp = r, 1-r 
     ar = mp.archive.loadarchive(path)
 
@@ -179,12 +179,13 @@ def do_all(path=None, out=None, r=0.05, connectivity=1, method="extremal", Othol
     vortex_anisotropy = []
 
     areas = []
+    orientations = []
 
     #for i in frameis:
     try:
         for frame in ar.read_frames():
 
-            #print(i)
+            print({datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, i)
             #frame = ar._read_frame(i)
             try:
                 vx, vy = frame.vx.reshape(lx, ly), frame.vy.reshape(lx, ly)
@@ -212,6 +213,8 @@ def do_all(path=None, out=None, r=0.05, connectivity=1, method="extremal", Othol
             props =  ['label',  'inertia_tensor_eigvals']#'area',
             if do_area:
                 props.append('area')
+            if do_orientation:
+                props.append('orientation')
             label_n, number_n = measure.label(dilate_image(vortices_n), connectivity=connectivity, return_num=True)
             labels = np.arange(1, number_n+1)
             dic_n = measure.regionprops_table(label_n, properties=(props))#
@@ -240,6 +243,8 @@ def do_all(path=None, out=None, r=0.05, connectivity=1, method="extremal", Othol
             vorticity_area_ratios.append(vorticity_area_ratio)
             if do_area:
                 areas.append([dic_n['area'], dic_p['area']])
+            if do_orientation:
+                orientations.append([dic_n['orientation'], dic_p['orientation']])
             # this can be functioned out
 
             # label_n, number_n, vals_n, counts_n = label_vortices(vortices_n)
@@ -270,6 +275,7 @@ def do_all(path=None, out=None, r=0.05, connectivity=1, method="extremal", Othol
         savedic['inertia_eigs_n'] = [i0_n, i1_n]
         savedic['inertia_eigs_p'] = [i0_p, i1_p]
         savedic['area'] = areas
+        savedic['orientation'] = orientations
 
         with open(f'{out}.pickle', 'wb') as f:
             pickle.dump(savedic, f)
@@ -283,6 +289,7 @@ def wrapper_do_all(dic):
 
 def do_frame(path, framei, r=0.05, connectivity=1, method="extremal", Othold=0.52, Qthold=0, do_area=False):
 
+    #print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, started do_frame {framei}', flush=True)
     # very annoying it has to read each time but i cant pass the frame, and at least the memory is kept low
     tn, tp = r, 1-r 
     ar = mp.archive.loadarchive(path)
@@ -291,12 +298,15 @@ def do_frame(path, framei, r=0.05, connectivity=1, method="extremal", Othold=0.5
     try:
         frame = ar._read_frame(framei)
     except FileNotFoundError: # some frames may be missing
-        print(f'skipped frame {framei} due to FileNotFoundError')
+        print(f'skipped frame {framei} due to FileNotFoundError, {path}', flush=True)
         return 
+    #print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, loaded frame {framei}', flush=True)
     try:
         vx, vy = frame.vx.reshape(lx, ly), frame.vy.reshape(lx, ly)
     except AttributeError:
         vx, vy = mp.base_modules.flow.velocity(frame.ff, lx, ly)
+    #except TypeError:
+
     
     vort, E, dxux, dyux, dxuy, dyuy = vortandE(vx, vy, return_terms=True)
 
@@ -335,7 +345,7 @@ def do_frame(path, framei, r=0.05, connectivity=1, method="extremal", Othold=0.5
     #i0_p, i1_p = np.sqrt(dic_p['inertia_tensor_eigvals-0']), np.sqrt(dic_p['inertia_tensor_eigvals-1'])
     #anisotropy_p = np.maximum(i0_p/i1_p, i1_p/i0_p)
     #anisotropy_p = (i0_p-i1_p)/(i0_p+i1_p)
-
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, created dicts, frame {framei}', flush=True)
     vortsum = np.sum(vort) # must be 0
     vortcounts, vortbins = np.histogram(vort.ravel(), 50) #vorticity hist
     vorticity_area_ratio =  np.sum(vort>0)/np.sum(vort<=0) #area ratio of pos and neg
@@ -347,7 +357,9 @@ def do_frame(path, framei, r=0.05, connectivity=1, method="extremal", Othold=0.5
     # vorthists.append([vortcounts, vortbins])
     # vorticity_area_ratios.append(vorticity_area_ratio)
     #returnlist = [vortsum, [vortcounts, vortbins], vorticity_area_ratio, [number_n, number_p], [anisotropy_n, anisotropy_p]]
-    returndic = {'vortsum':vortsum, 'vorthist':[vortcounts, vortbins],
+    returndic = {
+     'vortsum':vortsum, 
+     'vorthist':[vortcounts, vortbins],
      'vorticity_area_ratio':vorticity_area_ratio,
      'vortex_number':[number_n, number_p], 
      'inertia_eigs_n':[i0_n, i1_n],
@@ -359,42 +371,49 @@ def do_frame(path, framei, r=0.05, connectivity=1, method="extremal", Othold=0.5
         returndic['area'] = [dic_n['area'], dic_p['area']]
     if do_orientation:
         returndic['orientation'] = [dic_n['orientation'], dic_p['orientation']]
+    # write returndic here - if it times out before finishing
     return returndic
 
 
 
-def do_archive(ntasks, path=None, out=None, r=0.05, connectivity=1, method="extremal", Othold=0.52,  Qthold=0, do_area=False, do_orientation=False):
-    print(f'starting {path}')
+def do_archive(ntasks=1, path=None, out=None, r=0.05, connectivity=1, method="extremal", Othold=0.52,  Qthold=0, do_area=False, do_orientation=False):
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, starting {path}')
 
     ar = mp.archive.loadarchive(path)
-
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, loaded archive')
     savedic = ar.__dict__
     savedic['method'] = method
     savedic['Qthold'] = Qthold
     savedic['Othold'] = Othold
 
     nframe = ar.num_frames
-    frameis = np.arange(nframe)
+    frameis = np.arange(nframe)#[::10]
 
+    #del ar
+    #ntasks = min(ntasks, np.floor(int(os.environ['SLURM_CPUS_PER_TASK'])/2).astype(int))
+    ntasks = min(ntasks, int(os.environ['SLURM_CPUS_PER_TASK']))
     #collector lists
     vortsums = []
     vorthists = []
-    #vorticity_area_ratios = []
-    
+    vorticity_area_ratios = []
+
 
     vortex_numbers = []
-    vortex_anisotropies = []
+    #vortex_anisotropies = []
+    inertias_n = []
+    inertias_p = []
 
     areas = []
     orientations = []
     ncpu = min(ntasks, nframe)
-    print(ncpu)
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, ncpus: {ncpu}')
 
     rundics = []
     for framei in frameis:
         dic = {'path':path, 'framei':framei,
          'r':r, 'connectivity':connectivity, 'method':method, 'Othold':Othold, 'Qthold':Qthold, 'do_area':do_area}
         rundics.append(dic)
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, made rundics')
 
     with Pool(ncpu) as p:
         res = p.map(wrapper_do_frame, rundics, chunksize=1)
@@ -405,7 +424,9 @@ def do_archive(ntasks, path=None, out=None, r=0.05, connectivity=1, method="extr
             vorthists.append(rpart['vorthist'])
             vorticity_area_ratios.append(rpart['vorticity_area_ratio'])
             vortex_numbers.append(rpart['vortex_number'])
-            vortex_anisotropies.append(rpart['vortex_anisotropy'])
+            #vortex_anisotropies.append(rpart['vortex_anisotropy'])
+            inertias_n.append(rpart['inertia_eigs_n'])
+            inertias_p.append(rpart['inertia_eigs_p'])
             if do_area:
                 areas.append(rpart['area'])
             if do_orientation:
@@ -418,7 +439,9 @@ def do_archive(ntasks, path=None, out=None, r=0.05, connectivity=1, method="extr
     savedic['vorthists'] = vorthists
     savedic['vorticity_area_ratios'] = vorticity_area_ratios
     savedic['vortex_numbers'] = vortex_numbers
-    savedic['vortex_anisotropy'] = vortex_anisotropies
+    #savedic['vortex_anisotropy'] = vortex_anisotropies
+    savedic['inertias_n'] = inertias_n
+    savedic['inertias_p'] = inertias_p
 
     if do_area:
         savedic['area'] = areas
@@ -426,7 +449,7 @@ def do_archive(ntasks, path=None, out=None, r=0.05, connectivity=1, method="extr
         savedic['orientation'] = orientations
     with open(f'{out}.pickle', 'wb') as f:
         pickle.dump(savedic, f)
-    print(f'finished {path}')
+    print(f'finished {path}, nframes = {len(vortsums)}')
 
 
 def wrapper_do_frame(dic):
@@ -440,7 +463,6 @@ if __name__ == "__main__":
     r = 0.05 # 5% extreme vorticity
     Othold = 0.52
     Qthold=2*10**-8
-    size=512
     do_area=True
     do_orientation=True
     vortex_type = 'Q_criterion'
@@ -453,8 +475,17 @@ if __name__ == "__main__":
     if do_orientation:
         do_orientation_suff='orientation'
 
-    datapath = f"/lustre/astro/kpr279/ns{size}*/*/*"
-    destpath = f"/lustre/astro/rsx187/isolinescalingdata/vortex_statistics/{vortex_type}{do_area_suff}{do_orientation_suff}qthold2e-8_eigs/nematic_simulation{size}"
+
+    size=512
+
+    #datapath = f"/lustre/astro/kpr279/ns{size}*/*/*"
+    datapath = f"/lustre/astro/kpr279/ns{size}*2/*/*"
+    #datapath = f"/lustre/astro/rsx187/mmout/simon_CC_scan/*"
+    #datapath = f"/lustre/astro/rsx187/mmout/uq_sample/*"
+    #destpath = f"/lustre/astro/rsx187/isolinescalingdata/vortex_statistics/{vortex_type}{do_area_suff}{do_orientation_suff}qthold2e-8_eigs/nematic_simulation{size}"
+    destpath = f"/lustre/astro/rsx187/isolinescalingdata/vortex_statistics/{vortex_type}{do_area_suff}{do_orientation_suff}qthold2e-8_eigs/nematic_simulation{size}_2"
+    #destpath = f"/lustre/astro/rsx187/isolinescalingdata/vortex_statistics/{vortex_type}{do_area_suff}{do_orientation_suff}qthold2e-8_eigs/simon_CC_scan"
+    #destpath = f"/lustre/astro/rsx187/isolinescalingdata/vortex_statistics/{vortex_type}{do_area_suff}{do_orientation_suff}qthold2e-8_eigs/uq_sample"
     print(destpath)
     #par_varied = 'xi'
     #datapath = f"/lustre/astro/rsx187/mmout/simon_{par_varied}_scan/*"
@@ -464,26 +495,39 @@ if __name__ == "__main__":
     names = glob.glob(datapath)
 
     #necessary
-    names = [n for n in names if 'sdn' not in n]
+    #names = [n for n in names if 'sdn' not in n]
     names = [n for n in names if '.dat' not in n]
 
     #choice
     #names = [n for n in names if '0.019' not in n]
-    #names = [n for n in names if '0.021' not in n]
-    #names = [n for n in names if 'counter_2' in n]
-    
-    names = [n for n in names if ('counter_0' and 'counter_1' and 'counter_2') not in n]
+    #names = [n for n in names if 'z0.024' in n]
+    #names = [n for n in names if 'counter0' in n]
+    #names = [n for n in names if '1024' in n]
+    #names = [n for n in names if 'cc0' not in n]
+    #names = [n for n in names if 'xi1' in n]
+    #names = [n for n in names if 'xi0_z0.021_LX2048_counter0' in n]
+    #names = [n for n in names if 'counter_0' in n]
+    #names = [n for n in names if ('counter_0' and 'counter_1' and 'counter_2') not in n]
     #names = [names[0]]
     #names = names[:15]
-    #names = names[15:]
+    names = names[30:]
     print(names)
     print('n names:', len(names))
 
     #sys.exit()
 
-    outnames = ['_'.join(n.split('/')[-1].split('_')[-4:]) for n in names] # what
+    #outnames = ['_'.join(n.split('/')[-1].split('_')[-4:]) for n in names] # for kpr279/ns...
+    outnames = [n.split('/')[-1] for n in names] # for mmout/simon_...
 
     pathnames = [[n, destpath+'/'+outname] for n, outname in zip(copy.copy(names), outnames)]
+
+    #for name, outname in pathnames:
+    #    nfiles = len(os.listdir(name))
+    #    if nfiles!=182:
+    #        names.remove(name)
+    #        print(f'removed {name}, {nfiles} files')
+    #outnames = [n.split('/')[-1] for n in names] # for mmout/simon_...
+    #pathnames = [[n, destpath+'/'+outname] for n, outname in zip(copy.copy(names), outnames)]
 
     if not overwrite:
         for name, outname in pathnames:
@@ -491,13 +535,15 @@ if __name__ == "__main__":
                 names.remove(name)
                 print(f'{name} already exists')
         #remake without existing
-        outnames = ['_'.join(n.split('/')[-1].split('_')[-4:]) for n in names] # what
+        #outnames = ['_'.join(n.split('/')[-1].split('_')[-4:]) for n in names] # for kpr279/ns...
+        outnames = [n.split('/')[-1] for n in names] # for mmout/simon_...
         pathnames = [[n, destpath+'/'+outname] for n, outname in zip(names, outnames)]
     print(names)
     #sys.exit()
 
-    ntasks = min(len(pathnames), int(os.environ['SLURM_CPUS_PER_TASK']))
-
+    #pathnames = pathnames[:3]
+    #ntasks = min(len(pathnames), np.floor(int(os.environ['SLURM_CPUS_PER_TASK'])/2).astype(int))
+    ntasks = 5
     params = [{'path':path, 'out':destpath+'/'+outname,  'method':vortex_type,
                'r':r, 'Othold':Othold, 'Qthold':Qthold, 'do_area':do_area, 'do_orientation':do_orientation}
               for path, outname in zip(names, outnames)]

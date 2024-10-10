@@ -11,12 +11,9 @@ import json
 #datapath = f'/lustre/astro/rsx187/mmout/active_sample_n10/*'
 overwrite = False
 folder = "simon_xi_scan"
-folder = "simon_CC_scan"
-folder = "compressibleAN"
-folder = "ns512pd2"
+#folder = "compressibleAN"
 datapath = f'/lustre/astro/rsx187/mmout/{folder}/*'
-datapath = f'/lustre/astro/rsx187/{folder}/*'
-datapath = f'/lustre/astro/kpr279/{folder}/*/*'
+#datapath = f'/lustre/astro/rsx187/{folder}/*'
 
 paths = glob.glob(datapath)
 print(paths)
@@ -25,7 +22,7 @@ print(paths)
 for path in paths:
     print(path, path.split('/')[-1])
     name = path.split('/')[-1]
-    print(name, flush=True)
+    print(name)
     #sys.exit()
     path = path+'/'
     #datapath = f'/lustre/astro/rsx187/mmout/active_sample_forperp/qzk1k30.05_K30.05_qkbt0_z{z}_xi1_LX256_counter0/'
@@ -43,11 +40,8 @@ for path in paths:
     Path(destpath+"/vorticity").mkdir(parents=True, exist_ok=True)
 
     copyfile(path+"parameters.json", destpath+"/parameters.json")
-    nfiles = len(os.listdir(path))
-    print(nfiles, flush=True)
-    #if nfiles!=182: 
-        #print("skipped due to wrong amount of files", flush=True)
-        #continue
+
+
     nframe = ar.num_frames
     frameis = np.arange(nframe)#[::10]
 
