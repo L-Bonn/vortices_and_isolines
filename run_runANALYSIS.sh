@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=ANAL
-#SBATCH --partition=astro3_devel
+#SBATCH --partition=astro3_short
 #SBATCH --nodes=1
 #SBATCH --mem=180G
 #SBATCH --account=astro

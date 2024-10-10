@@ -120,7 +120,7 @@ def SLE_Trace(foldertypeanal):
                 if j<1: # just take the first (longest)
                     X_curve_final.append(counter[:, 1]-counter[0, 1]) # why only subtract from x?? (maybe y[0] is already 0)
                     Y_curve_final.append(counter[:, 0])
-            print(link, len(X_curve_final), flush=True)
+            #print(link, len(X_curve_final), flush=True)
             del indices,sorted_list,contours
    
     return  X_curve_final,Y_curve_final
@@ -574,7 +574,7 @@ if __name__ == '__main__':
     #names = glob.glob('/groups/astro/adoostmo/projects/SLE_Lasse/compressibleAN/*')
     #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/vorticitydata/Stress_Density_PIV_Tracking/*')
 
-    names = names[:5]
+    
     # checks and cleaning
     assert len(names)>0, f'0 names: {names}'
     names = [name for name in names if 'README' not in name]
@@ -706,16 +706,17 @@ if __name__ == '__main__':
         ncpu=min(int(os.environ['SLURM_CPUS_PER_TASK']), len(FOLDER))
         print(f'ncpu: {ncpu}', flush=True)
         def do_trace(foldertypeanal):
+            #print(foldertypeanal, flush=True)
             folder, type_anal = foldertypeanal
             if not overwrite:
                 if os.path.isfile(str(folder)+"/SLE_Trace.npy"):
                     return
 
             Trace=SLE_Trace(foldertypeanal)
-            print(folder, flush=True)
+            #print(folder, flush=True)
             # obviously the traces are not all the same length so np.array() doesn't work
             # I'm going to just pad with nan lets see.
-            print(Trace, flush=True)
+            #print(Trace, flush=True)
             try:
                 arTrace = np.array(trace_pad(Trace)) 
             except ValueError:
@@ -729,7 +730,7 @@ if __name__ == '__main__':
             #del arTrace
 
         with Pool(ncpu) as p:
-            res = p.map(do_trace, zip(FOLDER, type_anal*len(FOLDER)))
+            res = p.map(do_trace, zip(FOLDER, [type_anal]*len(FOLDER)))
         if len(res)>0: #what is going on here
             for folder in res:
                 try:

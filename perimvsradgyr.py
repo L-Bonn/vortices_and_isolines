@@ -140,7 +140,7 @@ def run_perim_v_rg_multi(foldername, outpath, ntasks):
 if __name__ == '__main__':
 
     typeof = 'vorticity'
-    typeof = 'pressure'
+    #typeof = 'pressure'
     #name = 'zeta_0.04_counter_2'
     size = 2048
     overwrite = True
@@ -150,11 +150,11 @@ if __name__ == '__main__':
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/wensink2012/3d_data_piv/*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/simon_K_scan/*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/simon_xi_scan/*/{typeof}')
-    folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/pressuredata/colloids_sourav/*/{typeof}')
+    #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/pressuredata/colloids_sourav/*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/Valeriia_tracking/*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/compressibleAN/*')
 
-    #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/grf/*/{typeof}')
+    folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/grf3/*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/varunBactTurb/*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/backofen/Forcing_*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/u_sample/uzk*/{typeof}')
@@ -178,10 +178,10 @@ if __name__ == '__main__':
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/perimvsgyrout/wensink2012_3d_data_piv/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/perimvsgyrout/simon_K_scan/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/perimvsgyrout/simon_xi_scan/'
-    outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/perimvsgyrout/colloids_sourav/'
+    #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/perimvsgyrout/colloids_sourav/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/perimvsgyrout/Valeriia_tracking/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/perimvsgyrout/compressibleAN/'
-    #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/grf/perimvsgyrout/'
+    outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/grf3/perimvsgyrout/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/varunBactTurb/perimvsgyrout/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/backofen/perimvsgyrout/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/u_sample/perimvsgyrout/'
