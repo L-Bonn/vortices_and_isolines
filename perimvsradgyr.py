@@ -142,8 +142,8 @@ if __name__ == '__main__':
     typeof = 'vorticity'
     #typeof = 'pressure'
     #name = 'zeta_0.04_counter_2'
-    size = 2048
-    overwrite = True
+    #size = 2048
+    overwrite = False
     multiprocessing_of_run = True
     
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data2/simon_data/nematic_simulation{size}/*/{typeof}')
@@ -154,12 +154,16 @@ if __name__ == '__main__':
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/Valeriia_tracking/*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/compressibleAN/*')
 
-    folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/grf3/*/{typeof}')
-    #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/varunBactTurb/*/{typeof}')
+    #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/grf3/*/{typeof}')
+    #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/varunBactTurbv2/*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/backofen/Forcing_*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/u_sample/uzk*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/uq_sample/qzk*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/PIV_mol.perturb/*/{typeof}')
+    #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/polar/*/{typeof}')
+    #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/polar/L2048/*/{typeof}')
+    folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/olgadata/*/{typeof}')
+    #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/smukherjee/*/{typeof}')
 
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/Stress_Density_PIV_Tracking/*/{typeof}')
     #folder = [f for f in folder if 'counter_0' in f]
@@ -181,12 +185,15 @@ if __name__ == '__main__':
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/perimvsgyrout/colloids_sourav/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/perimvsgyrout/Valeriia_tracking/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/perimvsgyrout/compressibleAN/'
-    outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/grf3/perimvsgyrout/'
+    #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/grf3/perimvsgyrout/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/varunBactTurb/perimvsgyrout/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/backofen/perimvsgyrout/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/u_sample/perimvsgyrout/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/uq_sample/perimvsgyrout/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/PIV_mol.perturb/perimvsgyrout/'
+    #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/polar/L2048/perimvsgyrout/'
+    #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/olgadata/perimvsgyrout/'
+    outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/smukherjee/perimvsgyrout/'
 
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/perimvsgyrout/Stress_Density_PIV_Tracking/'
     Path(outfolder).mkdir(parents=True, exist_ok=True)

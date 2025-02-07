@@ -19,7 +19,9 @@ zs = [1]
 uqs = [0.005, 0.01, 0.02, 0.04]
 thetas = [0.001, 0.005, 0.01, 0.013, 0.017]
 sizes = [256, 512, 1024, 2048, 4096]
-sizes = [1024]
+sizes = [512, 1024]
+sizes = [2048]
+
 overwrite = False
 global scalarjson
 scalarjson = True
@@ -86,7 +88,7 @@ for size in sizes:
         
 
 
-        destpath = f"/lustre/astro/rsx187/isolinescalingdata/vorticitydata/simon_data/nematic_simulation{size}"
+        #destpath = f"/lustre/astro/rsx187/isolinescalingdata/vorticitydata/simon_data/nematic_simulation{size}"
         destpath = f"/lustre/astro/rsx187/isolinescalingdata/fullvorticitydata/simon_data/nematic_simulation{size}"
         #destpath = f"/lustre/astro/rsx187/isolinescalingdata/fullvorticitydata/q_sample"
         #destpath = f"/lustre/astro/rsx187/isolinescalingdata/fullvorticitydata/simon_data/nematic_simulation{size}"
@@ -103,8 +105,9 @@ for size in sizes:
 
         names = [n for n in names if 'sdn' not in n]
         names = [n for n in names if '.dat' not in n]
+        #names = [n for n in names if ]
         #names = [n for n in names if '1024' in n]
-        #names = [n for n in names if 'counter_9' in n]
+        #names = [n for n in names if 'counter_4' in n]
         #names = [n for n in names if '0.03' in n]
         #names = [n for n in names if ('counter_2' not in n) &  ('counter_1' not in n) & ('counter_0' not in n)]
 
@@ -122,9 +125,11 @@ for size in sizes:
             #    names.remove(name)
             #    print(f'{name} already exists')
             done = os.listdir(destpath)
+            #done = [d.split('/')[-1] for d in done]
             print('n names:', len(names), ', n done:', len(done))
-            print(f'skipped: {len([name for name in names if name in done])}')
-            names = [name for name in names if name not in done] 
+            print(f'skipped: {len([name for name in names if name.split("/")[-1][12:] in done])}')
+            #print(f'skipped: {len([name for name in names if name.split("/")[-1] in done])}')
+            names = [name for name in names if name.split('/')[-1][12:] not in done] 
             #names = names[:1]
         print(names)
         print(f'number of analyses: {len(names)}\n')
@@ -134,6 +139,7 @@ for size in sizes:
         #outnames = [n.split('/')[-1] for n in names] #  for mmout data
         pathnames = [[n, destpath+'/'+outname] for n, outname in zip(names, outnames)]
         print(pathnames)
+        print('n paths:', len(pathnames))
         #sys.exit()
         random.shuffle(pathnames)
         if len(pathnames)==0:

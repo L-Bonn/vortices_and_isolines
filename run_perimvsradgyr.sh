@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=per_rad
-#SBATCH --partition=astro2_short
+#SBATCH --partition=astro3_short
 #SBATCH --nodes=1
 #SBATCH --mem=30G
 #SBATCH --account=astro
