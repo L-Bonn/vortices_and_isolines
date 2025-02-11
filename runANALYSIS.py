@@ -60,6 +60,7 @@ def trace_pad(Trace):
     return [Tracex, Tracey]
 
 def Draw(matrix):
+    # can be improved but no need
     lx,ly=matrix.shape
     for i in range(lx): # putting 1 on the bottom and 0 on the top
         matrix[i][0]=1
@@ -74,6 +75,28 @@ def Draw(matrix):
         
     return matrix
 
+def draw_border(fieldbef, cut=None, y_realline=None):
+    
+    fieldout = copy.copy(fieldbef)
+    leftval = 1
+    rightval = 0
+    lx, ly = np.shape(fieldout)
+    
+    if not cut:
+        cut = np.floor(lx/2).astype(int)
+    if not y_realline:
+        y_realline = 0
+    cut = int(cut)
+    y_realline = int(y_realline)
+    fieldout[:cut, y_realline] = leftval
+    fieldout[cut:, y_realline] = rightval
+    fieldout[:, :y_realline] = leftval
+    fieldout[-1] = rightval
+    fieldout[-0] = leftval
+    fieldout[:cut, -1] = leftval
+    fieldout[cut:, -1] = rightval
+    return fieldout
+
 def rotate_matrix(matrix, degrees):
     if degrees == 0:
         return matrix
@@ -84,7 +107,18 @@ def rotate_matrix(matrix, degrees):
     elif degrees == 270:
         return np.rot90(matrix, k=3)
 
-def SLE_Trace(foldertypeanal):
+
+def remove_loops(X_ALL_loops, Y_ALL_loops):
+    """
+    to remove contours that loop - by removing those that end at y=0 (implicit)
+    """
+    endsatinf = [True if loop[-1]!=0 else False for loop in Y_ALL_loops ]# x will end at 0 due to Draw
+    X_ALL_loops = [loop for end, loop in zip(endsatinf, X_ALL_loops) if end]
+    Y_ALL_loops = [loop for end, loop in zip(endsatinf, Y_ALL_loops) if end]
+    
+    return X_ALL_loops, Y_ALL_loops
+
+def SLE_Trace(foldertypeanal, removeloops=True):
     folder, type_anal = foldertypeanal
     X_curve_final=[]
     Y_curve_final=[]
@@ -94,8 +128,8 @@ def SLE_Trace(foldertypeanal):
         
         try:
             data=np.load(link)
-        except ValueError: 
-            data = np.load(link)
+        #except ValueError: 
+        #    data = np.load(link)
         except UnicodeDecodeError:
             data = np.load(link)
         except ValueError: #not gna get used
@@ -122,7 +156,8 @@ def SLE_Trace(foldertypeanal):
                     Y_curve_final.append(counter[:, 0])
             #print(link, len(X_curve_final), flush=True)
             del indices,sorted_list,contours
-   
+    if removeloops:
+        X_curve_final,Y_curve_final = remove_loops(X_curve_final,Y_curve_final)
     return  X_curve_final,Y_curve_final
 
 def chunks(lst, n):
@@ -347,7 +382,26 @@ def winding_at_L(loops_to_save,L):
 
     return L,THETA_forL
 
+def inverse_sc_all(X_ALL_loops, Y_ALL_loops, lx, ly, cut=5_000, rescale=100):
+    """
+    params: X_ALL_loops, Y_ALL_loops, scalar box length lx, scalar box length ly
+    perform an inverse Schwarz Christoffel transformation as defined in sle package
+    includes scaling down to a box and back to size rescale
+    """
+    transformed_X_ALL, transformed_Y_ALL = [], []
+    for X, Y in zip(X_ALL_loops, Y_ALL_loops):
+        trace = np.vstack([X, Y]).T
+        centretrace = trace - trace[0] # centering
 
+        centretrace /= np.array([lx, ly]) # shrinking
+        ctrace = centretrace[:, 0] + 1j*centretrace[:, 1] # complexification
+        sc_ctrace = sle.measure.schwarz_christoffel_exact(ctrace) # magic happens here
+        if cut:
+            sc_ctrace = sc_ctrace[:cut] 
+        x, y = np.real(sc_ctrace)*rescale, np.imag(sc_ctrace)*rescale # realisation and rescaling
+        transformed_X_ALL.append(x)
+        transformed_Y_ALL.append(y)
+    return transformed_X_ALL, transformed_Y_ALL
 
 def cot(x):
     return 1/math.tan(x)
@@ -542,10 +596,14 @@ if __name__ == '__main__':
     
     do_chunks = True # subdivide long traces for statistics purposes (when low on data)
 
+    removeloops = False
+    do_inverse_schwarz_christoffel = True
+    rescale = 100 # how to rescale trace after inverse schwarz christoffel
+
 
     #type_anal - will look into folders with this name (so you could just as well look at pressure or anything)
     type_anal = 'vorticity'
-    #type_anal = 'pressure'  # '#binary_vorticity' # pressure
+    #type_anal = 'pressure'  
     #type_anal = 'binary_vorticity'
 
     ##FILE ORIGIN
@@ -555,18 +613,14 @@ if __name__ == '__main__':
 
 
     #names = glob.glob('/groups/astro/rsx187/isolinescaling/pressuredata/simon_data/*/*')
-    #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/pressuredata/simon_data/*/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/simon_data/*/*')
     #
-    names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/grf3/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/grf3/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/pressuredata/colloids_sourav/*')
-    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/varunBactTurb/*')
-    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/backofen/Forcing_2.5_friction/*')
-    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/compressibleAN/*')
-    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/PIV_mol.perturb/*')
-    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/u_sample/*')
-    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/CompressibleAN/out*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/varunBactTurbv2/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/Valeriia_tracking/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/smukherjee/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/mitomyocinC/*/*')
 
     #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/vorticitydata/wensink2012/3d_data_piv/*')
     #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/data-nematic')
@@ -574,7 +628,8 @@ if __name__ == '__main__':
     #names = glob.glob('/groups/astro/adoostmo/projects/SLE_Lasse/compressibleAN/*')
     #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/vorticitydata/Stress_Density_PIV_Tracking/*')
 
-    
+    names = ['/lustre/astro/rsx187/isolinescalingdata/vorticitydata/test_rem_loops_and_isc/critical_percolation_remove_loops_isc/']
+    names = ['/lustre/astro/rsx187/isolinescalingdata/vorticitydata/test_rem_loops_and_isc/critical_percolation_isc/']
     # checks and cleaning
     assert len(names)>0, f'0 names: {names}'
     names = [name for name in names if 'README' not in name]
@@ -586,7 +641,6 @@ if __name__ == '__main__':
     
     FOLDER = names
     print(FOLDER, flush=True)
-
 
 
     for f in FOLDER: # plain vorticity / pressure folders
@@ -609,7 +663,7 @@ if __name__ == '__main__':
     if not multi:
         #get trace
         for folder in FOLDER:
-            Trace=SLE_Trace([folder, type_anal])
+            Trace=SLE_Trace([folder, type_anal], removeloops=removeloops)
             # obviously the traces are not all the same length so np.array() doesn't work
             # I'm going to just pad with nan lets see.
             
@@ -662,6 +716,11 @@ if __name__ == '__main__':
 
         for folder in FOLDER:
             X_ALL_loops,Y_ALL_loops=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
+            if do_inverse_schwarz_christoffel:
+                # for a square
+                ly = np.nanmax(Y_ALL_loops[0])+1
+                lx = ly
+                X_ALL_loops,Y_ALL_loops = inverse_sc_all(X_ALL_loops,Y_ALL_loops, lx, ly, cut=False, rescale=rescale)
             Y_0=[]
             for i in range (2,10,1):
                 Y_0.append(i+0.1)
@@ -678,6 +737,12 @@ if __name__ == '__main__':
 
         for folder in FOLDER:
             loops_to_save_half_plane=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
+            if do_inverse_schwarz_christoffel:
+                X_ALL_loops,Y_ALL_loops = loops_to_save_half_plane
+                ly = np.nanmax(Y_ALL_loops[0])+1
+                lx = ly
+                X_ALL_loops,Y_ALL_loops = inverse_sc_all(X_ALL_loops,Y_ALL_loops, lx, ly, cut=False, rescale=rescale)
+                loops_to_save_half_plane = X_ALL_loops,Y_ALL_loops
             t_max=1000
             T_sample, W_T_sample= noise_plot(loops_to_save_half_plane,t_max)
 
@@ -712,7 +777,7 @@ if __name__ == '__main__':
                 if os.path.isfile(str(folder)+"/SLE_Trace.npy"):
                     return
 
-            Trace=SLE_Trace(foldertypeanal)
+            Trace=SLE_Trace(foldertypeanal, removeloops=removeloops)
             #print(folder, flush=True)
             # obviously the traces are not all the same length so np.array() doesn't work
             # I'm going to just pad with nan lets see.
@@ -794,8 +859,17 @@ if __name__ == '__main__':
 
         def do_left_passage(folder):
             X_ALL_loops,Y_ALL_loops=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
+            if do_inverse_schwarz_christoffel:
+                # for a square
+                ly = np.nanmax(Y_ALL_loops[0])+1
+                lx = ly
+                X_ALL_loops,Y_ALL_loops = inverse_sc_all(X_ALL_loops,Y_ALL_loops, lx, ly, cut=False, rescale=rescale)
             Y_0=[]
-            for i in range (2,10,1):
+            if do_inverse_schwarz_christoffel:
+                yrange = range(3,1000,100)
+            else:
+                yrange = range(2,10,1)
+            for i in yrange:
                 Y_0.append(i+0.1)
             Score_final=[]
             for y0 in Y_0:
@@ -814,6 +888,12 @@ if __name__ == '__main__':
        
         def do_driving(folder):
             loops_to_save_half_plane=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
+            if do_inverse_schwarz_christoffel:
+                X_ALL_loops,Y_ALL_loops = loops_to_save_half_plane
+                ly = np.nanmax(Y_ALL_loops[0])+1
+                lx = ly
+                X_ALL_loops,Y_ALL_loops = inverse_sc_all(X_ALL_loops, Y_ALL_loops, lx, ly, cut=False, rescale=rescale)
+                loops_to_save_half_plane = X_ALL_loops,Y_ALL_loops
             t_max=1000
             T_sample, W_T_sample= noise_plot(loops_to_save_half_plane,t_max)
 
