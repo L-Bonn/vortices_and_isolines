@@ -7,38 +7,30 @@ import glob
 import sys
 import os
 import json
+from multiprocessing import Pool
+
 #size = 2048
 #datapath = f'/lustre/astro/rsx187/mmout/active_sample_n10/*'
-overwrite = False
-folder = "simon_xi_scan"
-folder = "simon_CC_scan"
-folder = "compressibleAN"
-folder = "ns512pd2"
-datapath = f'/lustre/astro/rsx187/mmout/{folder}/*'
-datapath = f'/lustre/astro/rsx187/{folder}/*'
-datapath = f'/lustre/astro/kpr279/{folder}/*/*'
-
-paths = glob.glob(datapath)
-print(paths)
 #paths = ['/lustre/astro/rsx187/datasets/CompressibleAN']
 #for zeta in zs:
-for path in paths:
+#for path in paths:
+
+def wrapper(argdic):
+    return writevortpath(**argdic)
+
+def writevortpath(path, folder, overwrite=False, scalarjson=False):
     print(path, path.split('/')[-1])
     name = path.split('/')[-1]
     print(name, flush=True)
     #sys.exit()
     path = path+'/'
-    #datapath = f'/lustre/astro/rsx187/mmout/active_sample_forperp/qzk1k30.05_K30.05_qkbt0_z{z}_xi1_LX256_counter0/'
-    #datapath = f'/lustre/astro/rsx187/mmout/uq_sample/qzk1k30.05_K30.05_qkbt{uq}_z0_xi1_LX256_counter0/'
-    #datapath = f'/lustre/astro/rsx187/mmout/theta_sample/qzk1k30.05_K30.05_qkbt{theta}_z0_xi1_LX256_counter0/'
-    #datapath = f'/lustre/astro/jayeeta/aniso/datas/size_{size}/zeta-{zeta}-out/'
-    #datapath = f'/lustre/astro/bhan/nem2048/'
+
     ar = mp.archive.loadarchive(path)
 
-    #sdestpath = f"/lustre/astro/rsx187/isolinescalingdata/vorticitydata/active_sample_n10/active_sample_n10{ar.LX}_{ar.zeta}"
-    destpath = f"/lustre/astro/rsx187/isolinescalingdata/vorticitydata/{folder}/{name}"
-
-    #destpath = f"/groups/astro/rsx187/isolinescaling/vorticitydata/benjamin2048_zeta0.1"
+    full = ''
+    if scalarjson:
+        full = 'full'
+    destpath = f"/lustre/astro/rsx187/isolinescalingdata/{full}vorticitydata/{folder}/{name}"
 
     Path(destpath+"/vorticity").mkdir(parents=True, exist_ok=True)
 
@@ -52,7 +44,7 @@ for path in paths:
     frameis = np.arange(nframe)#[::10]
 
     for i in frameis:
-        print(i, 'of', frameis[-1])
+        print(i, 'of', frameis[-1], name)
         if not overwrite:
             if os.path.isfile(f'{destpath}/vorticity/frame{i}.npy'):
                 continue
@@ -64,8 +56,39 @@ for path in paths:
             continue
         LX, LY = frame.LX, frame.LY
         try:
-            vortbin = mp.base_modules.flow.vorticity(frame.ff, LX, LY)>0
+            vort = mp.base_modules.flow.vorticity(frame.ff, LX, LY)
         except AttributeError:
             vx, vy = frame.ux.reshape(LX, LY), frame.uy.reshape(LX, LY)
-            vortbin = mp.base_modules.numdiff.curl2D(vx, vy)>0
-        np.save(f'{destpath}/vorticity/frame{i}.npy', vortbin)
+            vort = mp.base_modules.numdiff.curl2D(vx, vy)
+        if scalarjson:
+            with open(f'{destpath}/vorticity/frame{i}.json', 'w') as f:
+                json.dump(vort.tolist(), f)
+        else:
+            vortbin = vort>0
+            np.save(f'{destpath}/vorticity/frame{i}.npy', vortbin)
+
+overwrite = False
+scalarjson = True
+
+folder = "simon_xi_scan"
+folder = "simon_CC_scan"
+folder = "compressibleAN"
+folder = "ns512pd2"
+folder = "polar/L2048"
+#datapath = f'/lustre/astro/rsx187/mmout/{folder}/*'
+datapath = f'/lustre/astro/rsx187/{folder}/*'
+#datapath = f'/lustre/astro/kpr279/{folder}/*/*'
+
+
+paths = glob.glob(datapath)
+print(paths)
+
+ntasks = min(len(paths), np.floor(int(os.environ['SLURM_CPUS_PER_TASK'])).astype(int))
+#ntasks = 5
+
+argdics = [{'path': path, 'folder': folder, 'overwrite':overwrite, 'scalarjson':scalarjson} for path in paths]
+
+#print(argdics)
+#sys.exit()
+with Pool(ntasks) as p:
+    p.map(wrapper, argdics)
