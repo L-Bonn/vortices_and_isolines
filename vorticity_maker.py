@@ -21,7 +21,7 @@ def wrapper(argdic):
 def writevortpath(path, folder, overwrite=False, scalarjson=False):
     print(path, path.split('/')[-1])
     name = path.split('/')[-1]
-    print(name, flush=True)
+    print('starting:', name, flush=True)
     #sys.exit()
     path = path+'/'
 
@@ -68,27 +68,38 @@ def writevortpath(path, folder, overwrite=False, scalarjson=False):
             np.save(f'{destpath}/vorticity/frame{i}.npy', vortbin)
 
 overwrite = False
-scalarjson = True
+scalarjson = False
+print(f"overwrite: {overwrite}, scalarjson: {scalarjson}", flush=True)
 
 folder = "simon_xi_scan"
 folder = "simon_CC_scan"
 folder = "compressibleAN"
 folder = "ns512pd2"
-folder = "polar/L2048"
+#folder = "polar/L2048"
+folder = "polar/L2048_gam2"
+#folder = "theta_sample"
+#folder = "q_sample"
+#folder = "uq_scanq"
+#folder = "polar/testgam"
 #datapath = f'/lustre/astro/rsx187/mmout/{folder}/*'
 datapath = f'/lustre/astro/rsx187/{folder}/*'
 #datapath = f'/lustre/astro/kpr279/{folder}/*/*'
 
 
+
 paths = glob.glob(datapath)
-print(paths)
+#paths = [p for p in paths if "LX2048" in p]
+#paths = [p for p in paths if "counter0" in p]
+print(paths, flush=True)
+print(f'n files: {len(paths)}', flush=True)
+
 
 ntasks = min(len(paths), np.floor(int(os.environ['SLURM_CPUS_PER_TASK'])).astype(int))
 #ntasks = 5
 
 argdics = [{'path': path, 'folder': folder, 'overwrite':overwrite, 'scalarjson':scalarjson} for path in paths]
 
-#print(argdics)
+##print(argdics)
 #sys.exit()
 with Pool(ntasks) as p:
     p.map(wrapper, argdics)
