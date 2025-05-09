@@ -7,7 +7,6 @@ from skimage import measure
 import random
 from scipy.stats import norm,sem
 import matplotlib.pyplot as plt
-import matplotlib
 import math
 #import cv2 
 from collections import deque
@@ -15,12 +14,12 @@ import numexpr as ne
 import scipy
 from scipy import optimize
 from mpmath import *
-import mpmath
 from mpmath import cot
 from numpy import ndarray
 from scipy.special import gamma
 import scipy.special as sc
 import os
+import copy
 import sys
 sn = ellipfun('sn')
 from multiprocessing import Pool
@@ -596,8 +595,8 @@ if __name__ == '__main__':
     
     do_chunks = True # subdivide long traces for statistics purposes (when low on data)
 
-    removeloops = False
-    do_inverse_schwarz_christoffel = True
+    removeloops = True
+    do_inverse_schwarz_christoffel = False
     rescale = 100 # how to rescale trace after inverse schwarz christoffel
 
 
@@ -611,9 +610,23 @@ if __name__ == '__main__':
     # glob folder/* will take all files in folder
     # otherwise do names = ['folder'] to do individual folders
 
+    print('beginning globbing', flush=True)
 
     #names = glob.glob('/groups/astro/rsx187/isolinescaling/pressuredata/simon_data/*/*')
-    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/simon_data/*/*')
+    #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/pressuredata/simon_data/isc_nematic_simulation2048/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/simon_data/isc*/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/olgadata/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/isc_olgadata/*')
+    names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/olgadata_tol/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/isc_olgadata_tol/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/olgadata_ntol/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/iscolgadata_ntol/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/polar/iscL2048/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/polar/L2048_gam2_isc/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/q_sample/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/q_sample_isc/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/uq_scanq_isc/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/backofen/iscAllForcingsFromPaper/*')
     #
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/grf3/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/pressuredata/colloids_sourav/*')
@@ -627,21 +640,34 @@ if __name__ == '__main__':
     #names = glob.glob('/groups/astro/adoostmo/projects/SLE/data-nematic/')
     #names = glob.glob('/groups/astro/adoostmo/projects/SLE_Lasse/compressibleAN/*')
     #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/vorticitydata/Stress_Density_PIV_Tracking/*')
+    #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/vorticitydata/guangyin/Oxygen_induced_turbulence_transision/*')
+    #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/vorticitydata/guangyin/Antibiotic_Induced_Turbulence_Transition/*')
 
-    names = ['/lustre/astro/rsx187/isolinescalingdata/vorticitydata/test_rem_loops_and_isc/critical_percolation_remove_loops_isc/']
-    names = ['/lustre/astro/rsx187/isolinescalingdata/vorticitydata/test_rem_loops_and_isc/critical_percolation_isc/']
+    #names = ['/lustre/astro/rsx187/isolinescalingdata/vorticitydata/test_rem_loops_and_isc/critical_percolation_remove_loops_isc/']
+    #names = ['/lustre/astro/rsx187/isolinescalingdata/vorticitydata/test_rem_loops_and_isc/critical_percolation_isc/']
+
     # checks and cleaning
     assert len(names)>0, f'0 names: {names}'
     names = [name for name in names if 'README' not in name]
     names = [name for name in names if '.ipynb' not in name]
     names = [name for name in names if 'perimvsgyrout' not in name]
 
+    if not do_inverse_schwarz_christoffel:
+        assert 'isc' not in names[0], f'isc in chosen files but do_inverse_schwarz_christoffel=False!, filename: {names[0]}'
+    #assert not do_inverse_schwarz_christoffel and not 'isc' in names[0], 
     #choosing specific files
-    #names = [name for name in names if 'data_pow' in name]
-    
-    FOLDER = names
-    print(FOLDER, flush=True)
+    #names = [name for name in names if '2048' in name]
+    #names = [name for name in names if 'counter_0' in name]
+  #   choice = ['z0.001params', 'z0.1params', 'z1.2params', 'z0.0005params', 'z0.3params', 'z1.0params',
+  # 'z0.003params', 'z0.05params', 'z1.1params', 'z0.2params',
+  # 'z0.002params', 'z0.9params', 'z0.005params', 'z0.5params', 'z0.0001params',
+  # 'z0.8params', 'z0.02params', 'z0.4params', 'z5e-05params',
+  # 'z0.7params', 'z0.01params', 'z0.007params', 'z1e-05params', 'z0.6params', 'z0.0002params']
+  #   names = [name for name in names if name.split('/')[-1] in choice]
 
+    FOLDER = names
+    print("folders:", FOLDER, flush=True)
+    #sys.exit() 
 
     for f in FOLDER: # plain vorticity / pressure folders
         if f.endswith(type_anal):
@@ -718,8 +744,12 @@ if __name__ == '__main__':
             X_ALL_loops,Y_ALL_loops=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
             if do_inverse_schwarz_christoffel:
                 # for a square
+                #ly = np.nanmax(Y_ALL_loops[0])+1
+                #lx = ly
+                # hack for a rectangle
                 ly = np.nanmax(Y_ALL_loops[0])+1
-                lx = ly
+                lx = (np.nanmax(X_ALL_loops[0])+1)*2
+                lx = ly = max(lx, ly)
                 X_ALL_loops,Y_ALL_loops = inverse_sc_all(X_ALL_loops,Y_ALL_loops, lx, ly, cut=False, rescale=rescale)
             Y_0=[]
             for i in range (2,10,1):
@@ -739,8 +769,13 @@ if __name__ == '__main__':
             loops_to_save_half_plane=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
             if do_inverse_schwarz_christoffel:
                 X_ALL_loops,Y_ALL_loops = loops_to_save_half_plane
+                # for a square
+                #ly = np.nanmax(Y_ALL_loops[0])+1
+                #lx = ly
+                # hack for a rectangle
                 ly = np.nanmax(Y_ALL_loops[0])+1
-                lx = ly
+                lx = (np.nanmax(X_ALL_loops[0])+1)*2
+                lx = ly = max(lx, ly)
                 X_ALL_loops,Y_ALL_loops = inverse_sc_all(X_ALL_loops,Y_ALL_loops, lx, ly, cut=False, rescale=rescale)
                 loops_to_save_half_plane = X_ALL_loops,Y_ALL_loops
             t_max=1000
@@ -833,6 +868,9 @@ if __name__ == '__main__':
 
         cut = 1000
         def do_winding(folder, cut, do_chunks):
+            if not overwrite:
+                if os.path.isfile(str(folder)+"/winding.npy"):
+                    return
             loops_to_save=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
             L_list,THETA_list=winding_statistics(loops_to_save, cut, do_chunks)
             np.save(str(folder)+"/winding.npy",np.array([L_list,*THETA_list]))
@@ -846,6 +884,9 @@ if __name__ == '__main__':
         def do_winding_pdf(folder):
             L_list=[80,500]
             for L in L_list:
+                if not overwrite:
+                    if os.path.isfile(str(folder)+"/windingmormaml_L="+str(L)+".npy"):
+                        continue
                 loops_to_save=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
                 L,THETA_forL=winding_at_L(loops_to_save,L)
                 np.save(str(folder)+"/windingmormaml_L="+str(L)+".npy",np.array([L,*THETA_forL]))
@@ -858,11 +899,18 @@ if __name__ == '__main__':
         #left passage
 
         def do_left_passage(folder):
+            if not overwrite:
+                if os.path.isfile(str(folder)+"/Left_passage.npy"):
+                    return
             X_ALL_loops,Y_ALL_loops=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
             if do_inverse_schwarz_christoffel:
                 # for a square
+                #ly = np.nanmax(Y_ALL_loops[0])+1
+                #lx = ly
+                # hack for a rectangle
                 ly = np.nanmax(Y_ALL_loops[0])+1
-                lx = ly
+                lx = (np.nanmax(X_ALL_loops[0])+1)*2
+                lx = ly = max(lx, ly)
                 X_ALL_loops,Y_ALL_loops = inverse_sc_all(X_ALL_loops,Y_ALL_loops, lx, ly, cut=False, rescale=rescale)
             Y_0=[]
             if do_inverse_schwarz_christoffel:
@@ -887,11 +935,19 @@ if __name__ == '__main__':
         # drive and drivetimes
        
         def do_driving(folder):
+            if not overwrite:
+                if os.path.isfile(str(folder)+"/noise.npy"):
+                    return
             loops_to_save_half_plane=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
             if do_inverse_schwarz_christoffel:
                 X_ALL_loops,Y_ALL_loops = loops_to_save_half_plane
+                # for a square
+                #ly = np.nanmax(Y_ALL_loops[0])+1
+                #lx = ly
+                # hack for a rectangle
                 ly = np.nanmax(Y_ALL_loops[0])+1
-                lx = ly
+                lx = (np.nanmax(X_ALL_loops[0])+1)*2
+                lx = ly = max(lx, ly)
                 X_ALL_loops,Y_ALL_loops = inverse_sc_all(X_ALL_loops, Y_ALL_loops, lx, ly, cut=False, rescale=rescale)
                 loops_to_save_half_plane = X_ALL_loops,Y_ALL_loops
             t_max=1000
@@ -907,6 +963,9 @@ if __name__ == '__main__':
         # correlation time
 
         def do_correlation(folder):
+            if not overwrite:
+                if os.path.isfile(str(folder)+"/correlation.npy"):
+                    return
             list_t=np.arange(0,20,1)
             lista_tau=np.arange(0,19,1)
             T_sample,W_T_sample=np.load(str(folder)+"/noise.npy",allow_pickle=True)
