@@ -590,11 +590,10 @@ if __name__ == '__main__':
     ##OPTIONS
     multi = True # use multiprocessing?
 
-    clean = False # clean out directories (fresh calculation)
+    clean = True # clean out directories (fresh calculation)
     overwrite = False # overwrite existing files?
     
     do_chunks = True # subdivide long traces for statistics purposes (when low on data)
-
     removeloops = True
     do_inverse_schwarz_christoffel = False
     rescale = 100 # how to rescale trace after inverse schwarz christoffel
@@ -602,8 +601,10 @@ if __name__ == '__main__':
 
     #type_anal - will look into folders with this name (so you could just as well look at pressure or anything)
     type_anal = 'vorticity'
+    #type_anal = 'qcriterion'
     #type_anal = 'pressure'  
     #type_anal = 'binary_vorticity'
+    #type_anal = 'epsilon'
 
     ##FILE ORIGIN
     # files should be as foldername/{type_anal}/*.npy 
@@ -613,27 +614,52 @@ if __name__ == '__main__':
     print('beginning globbing', flush=True)
 
     #names = glob.glob('/groups/astro/rsx187/isolinescaling/pressuredata/simon_data/*/*')
-    #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/pressuredata/simon_data/isc_nematic_simulation2048/*')
+    #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/simon_data/isc_nematic_simulation2048/*')
+    #names = glob.glob("/lustre/astro/rsx187/isolinescalingdata/vorticitydata/simon_data/isc_nematic_simulation2048/*counter_0")
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/simon_data/isc*/*')
-    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/olgadata/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/olgadata/tianxiang*/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/olgadata/test19_ss/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/olgadata/lowpass/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/olgadata/isc_test181920_ss/*/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/sle_TM/active_fluid_BigSim/active_fluid_alpha/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/sle_TM/active_fluid_2048Sim_Vort/*')
+
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/olgadata/PIVlab_16*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/active_fluid/active_fluid_alpha/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/lakshmi/*/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/isc_olgadata/*')
-    names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/olgadata_tol/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/olgadata_tol/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/isc_olgadata_tol/*')
-    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/olgadata_ntol/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/olgadata_ntol/*')#sashaMT
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/sashaMT/*')#
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/iscolgadata_ntol/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/polar/iscL2048/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/polar/*/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/grf_2powers/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/mito/*/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/polar/L2048_gam2_isc/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/polar/L2048_gam2/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/polar/test_polar_tt_isc/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/simon_data/*/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/q_sample/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/q_sample_isc/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/uq_scanq_isc/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/uq_scanq0.05_isc/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/backofen/iscAllForcingsFromPaper/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/simon_data/isc_nematic_simulation2048/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/simon_data/nematic_simulation2048/*')
     #
-    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/grf3/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/grf3/tianxiangTT/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/pressuredata/colloids_sourav/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/varunBactTurbv2/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/Valeriia_tracking/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/smukherjee/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/smukherjee_isc/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/mitomyocinC/*/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/lemma2019/*')
+    names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/deffree_initaligned/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/hillebrand/*')
+    names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/q_scan/*')
 
     #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/vorticitydata/wensink2012/3d_data_piv/*')
     #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/data-nematic')
@@ -651,6 +677,10 @@ if __name__ == '__main__':
     names = [name for name in names if 'README' not in name]
     names = [name for name in names if '.ipynb' not in name]
     names = [name for name in names if 'perimvsgyrout' not in name]
+    #names = [name for name in names if 'smooth' in name]
+    #names = [name for name in names if 'LX1024' in name]
+    #names = [name for name in names if 'PIVlab_16_v' in name]
+    #names = [name for name in names if 'collage' in name]
 
     if not do_inverse_schwarz_christoffel:
         assert 'isc' not in names[0], f'isc in chosen files but do_inverse_schwarz_christoffel=False!, filename: {names[0]}'
@@ -683,6 +713,10 @@ if __name__ == '__main__':
 
     if clean:
         clean_func(FOLDER) # clean out dest folders
+
+    print('todo:', flush=True)
+    for f in FOLDER:
+        print(f, flush=True)
     #sys.exit()
     print('start', flush=True)
 
@@ -977,8 +1011,12 @@ if __name__ == '__main__':
             
             
             Error2,c_list_final=c_different_tau_average_in_t(list_t,lista_tau,W_T_sample_dis) 
-            res = np.array(pad_ragged([T_save,Error2,c_list_final]))
-            np.save(str(folder)+"/correlation.npy", res)
+            try:
+                res = np.array(pad_ragged([T_save,Error2,c_list_final]))
+                np.save(str(folder)+"/correlation.npy", res)
+            except ValueError:
+                print(f'pad_ragged gives ValueError for folder: {folder}')
+            
 
         with Pool(ncpu) as p:
             p.map(do_correlation, FOLDER)
