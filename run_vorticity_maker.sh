@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=vorticity
-#SBATCH --partition=astro3_short
+#SBATCH --partition=astro2_short
 #SBATCH --nodes=1
 #SBATCH --mem=100G
 #SBATCH --account=astro
