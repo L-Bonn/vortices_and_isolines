@@ -35,7 +35,7 @@ def get_viscous_dissipation(vx, vy, eta):
 
 def get_nematic_dissipation(frame):
     """"
-    i want to return H:H/Gamma - a lot of calculation? Carenza 2020 EPL
+    i want to return Gamma H:H - a lot of calculation? Carenza 2020 EPL
     """
 
     try:
@@ -81,7 +81,38 @@ def get_nematic_dissipation(frame):
             +L3*(Qxx*(dxdxQyx-dydyQyx) + 2*Qyx*dxdyQyx +
             dxQxx*(-dyQxx+dxQyx) + dyQyx*(-dyQxx+dxQyx)))
     
-    return 1/Gamma * (2*Hxx**2 + 2*Hyx**2)
+    return Gamma * (2*Hxx**2 + 2*Hyx**2)
+
+def get_polar_dissipation(frame):
+    """"
+    i want to return h dot h/gamma - a lot of calculation? Carenza 2020 EPL
+    """
+
+    CC = frame.CC
+    Kp = frame.Kp
+    Kn = frame.Kn
+    gamma = frame.gamma
+    LX, LY = frame.LX, frame.LY
+    px, py = frame.Px.reshape(LX, LY), frame.Py.reshape(LX, LY)
+
+
+    ps = px*px+py*py
+    p4 = px*px*px*px+py*py*py*py+2*px*px*py*py
+
+    dxpx = mp.base_modules.numdiff.derivX(px)
+    dypx = mp.base_modules.numdiff.derivY(px)
+    dxpy = mp.base_modules.numdiff.derivX(py)
+    dypy = mp.base_modules.numdiff.derivY(py)
+    laplacian_px = mp.base_modules.numdiff.derivX(dxpx) + mp.base_modules.numdiff.derivY(dypx)
+    laplacian_py = mp.base_modules.numdiff.derivX(dxpy) + mp.base_modules.numdiff.derivY(dypy)
+
+    term = 1 - p4
+    hx = (CC*(1-ps)*px + Kp*laplacian_px + Kn*( 1.*ps*laplacian_px
+        +2.*px*(dxpx*dxpx+dypx*dypx-dxpy*dxpy-dypy*dypy)+4.*py*(dxpx*dxpy+dypx*dypy)))
+    hy = (CC*(1-ps)*py + Kp*laplacian_py + Kn*( 1.*ps*laplacian_py
+            +2.*py*(dxpy*dxpy+dypy*dypy-dxpx*dxpx-dypx*dypx) +4.*px*(dxpx*dxpy+dypx*dypy)))
+
+    return 1/gamma * (hx**2 + hy**2)
 
 def arch_to_D(path, outname):
     #path, outname = nameoutname
@@ -111,14 +142,20 @@ def arch_to_D(path, outname):
             frame = ar._read_frame(iframe)
             LX, LY = frame.LX, frame.LY
             try:
-                vx, vy = mp.base_modules.flow.velocity(frame.ff, LX, LY)
+                if ar.model_name == 'polar':
+                    vx, vy = mp.base_modules.flow.velocity(frame)
+                else:
+                    vx, vy = mp.base_modules.flow.velocity(frame.ff, LX, LY)
             except AttributeError:
                 vx, vy = frame.vx.reshape(LX, LY), frame.vy.reshape(LX, LY)
             except TypeError:
                 vx, vy = frame.vx.reshape(LX, LY), frame.vy.reshape(LX, LY)
                 
             Dv = get_viscous_dissipation(vx, vy, eta=eta)
-            DH = get_nematic_dissipation(frame)
+            if ar.model_name == 'nematic': 
+                DH = get_nematic_dissipation(frame)
+            else:
+                DH = get_polar_dissipation(frame)
 
         except FileNotFoundError:
             print(f'filenotfound for {path}, frame {iframe}')
@@ -155,12 +192,12 @@ if __name__ == '__main__':
     overwrite = 0
     size = 1024
 
-    dirpath = f'/lustre/astro/kpr279/ns{size}*/*/*'
-    #dirpath = f'/lustre/astro/rsx187/polar/L{size}/*'
+    #dirpath = f'/lustre/astro/kpr279/ns{size}*/*/*'
+    dirpath = f'/lustre/astro/rsx187/polar/L2048_gam2/*'
 
     fnames = glob.glob(dirpath)
-    outpath = f'/lustre/astro/rsx187/isolinescalingdata/dissipationboth/simon_{size}/'
-    #outpath = f'/lustre/astro/rsx187/isolinescalingdata/dissipationboth/polar_{size}/'
+    #outpath = f'/lustre/astro/rsx187/isolinescalingdata/dissipationboth/simon_{size}/'
+    outpath = f'/lustre/astro/rsx187/isolinescalingdata/dissipationboth/polar_L2048_gam2/'
 
     Path(outpath).mkdir(parents=True, exist_ok=True)
 
@@ -169,7 +206,7 @@ if __name__ == '__main__':
     #fnames = [name for name in fnames if 'LX500' not in name]
     #fnames = [name for name in fnames if 10<=int(''.join(filter(str.isdigit, name.rstrip('.mat').split('_')[-1][7:])))]
     #fnames = [name for name in fnames if ('z0.003' or 'z0.002') in name]
-    fnames = [name for name in fnames if 'counter_0' in name]
+    #fnames = [name for name in fnames if 'counter_0' in name]
     #fnames = fnames[:3]
 
     print(fnames)
