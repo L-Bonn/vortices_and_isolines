@@ -81,6 +81,8 @@ def run_perim_v_rg(foldername, outpath):
             field = np.load(foldername+'/'+file)
         except ValueError:
             field = np.loadtxt(foldername+'/'+file, delimiter=',')
+        if not field.dtype == np.dtype('bool'):
+            field = field<0
         p, r = perims_and_rgs(field, connectivity=2)
         perims.extend(p)
         rads.extend(r)
@@ -141,11 +143,21 @@ if __name__ == '__main__':
 
     typeof = 'vorticity'
     #typeof = 'pressure'
+    typeof = 'epsilon'
     #name = 'zeta_0.04_counter_2'
     #size = 2048
     overwrite = False
     multiprocessing_of_run = True
     
+    #path = "polar/L2048_gam2"
+    path = "simon_data/nematic_simulation2048"
+    #path = "grf_2powers"
+    #path = "polar/test_polar_tt_isc"
+    #path = "active_fluid/active_fluid_alpha"
+    #path = "active_fluid/active_fluid_lambda"
+    #path = "grf3/tianxiangTT"
+    
+
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data2/simon_data/nematic_simulation{size}/*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/wensink2012/3d_data_piv/*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/simon_K_scan/*/{typeof}')
@@ -162,12 +174,16 @@ if __name__ == '__main__':
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/PIV_mol.perturb/*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/polar/*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/polar/L2048/*/{typeof}')
-    folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/olgadata/*/{typeof}')
+    folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/{path}/*/{typeof}')
+    #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/olgadata/*/{typeof}')
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/smukherjee/*/{typeof}')
 
     #folder = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/Stress_Density_PIV_Tracking/*/{typeof}')
     #folder = [f for f in folder if 'counter_0' in f]
     #folder = [f for f in folder if ('counter_0' and 'counter_1' and 'counter_2') not in f]
+
+    #tianxiangs data
+    #folder = glob.glob(f'/lustre/astro/tx722/sle_TM/{path}/*/npy_output/{typeof}')
 
     folder = [f for f in folder if '.ipynb' not in f]
     #folder = [f for f in folder if 'cut25' in name]
@@ -192,14 +208,22 @@ if __name__ == '__main__':
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/uq_sample/perimvsgyrout/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/PIV_mol.perturb/perimvsgyrout/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/polar/L2048/perimvsgyrout/'
+    outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/{path}/perimvsgyrout/'
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/olgadata/perimvsgyrout/'
-    outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/smukherjee/perimvsgyrout/'
+    #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/smukherjee/perimvsgyrout/'
 
     #outfolder = f'/lustre/astro/rsx187/isolinescalingdata/{typeof}data/perimvsgyrout/Stress_Density_PIV_Tracking/'
     Path(outfolder).mkdir(parents=True, exist_ok=True)
 
+    def make_outs(folder):
+        if 'tx722' in folder[0]:
+            print('tianxiang')
+            outnames = [name.split('/')[-3] for name in folder]
+        else:
+            outnames = [name.split('/')[-2] for name in folder]
+        return outnames
     # make outnames
-    outnames = [name.split('/')[-2] for name in folder]
+    outnames = make_outs(folder)
     outpaths = [outfolder+outname for outname in outnames]
     args = zip(copy.copy(folder), outpaths)
 
@@ -210,7 +234,8 @@ if __name__ == '__main__':
                 folder.remove(file)
                 print(f'removed {file}')
         #remake outs
-        outnames = [name.split('/')[-2] for name in folder]
+
+        outnames = make_outs(folder)
         outpaths = [outfolder+outname for outname in outnames]
         args = zip(folder, outpaths)
 
