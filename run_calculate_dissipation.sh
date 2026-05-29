@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=diss
-#SBATCH --partition=astro2_short
+#SBATCH --partition=astro3_short
 #SBATCH --nodes=1
 #SBATCH --mem=180G
 #SBATCH --account=astro

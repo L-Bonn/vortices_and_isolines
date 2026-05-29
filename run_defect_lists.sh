@@ -2,7 +2,7 @@
 #SBATCH --job-name=defcou
 #SBATCH --partition=astro3_short
 #SBATCH --nodes=1
-#SBATCH --mem=30G
+#SBATCH --mem=120G
 #SBATCH --account=astro
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32

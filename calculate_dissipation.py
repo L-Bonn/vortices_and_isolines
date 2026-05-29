@@ -154,7 +154,7 @@ def arch_to_D(path, outname):
             Dv = get_viscous_dissipation(vx, vy, eta=eta)
             if ar.model_name == 'nematic': 
                 DH = get_nematic_dissipation(frame)
-            else:
+            elif ar.model_name == 'polar':
                 DH = get_polar_dissipation(frame)
 
         except FileNotFoundError:
@@ -190,14 +190,15 @@ def wrapper(argdic):
 if __name__ == '__main__':
 
     overwrite = 0
-    size = 1024
 
     #dirpath = f'/lustre/astro/kpr279/ns{size}*/*/*'
-    dirpath = f'/lustre/astro/rsx187/polar/L2048_gam2/*'
+    #dirpath = f'/lustre/astro/rsx187/polar/L2048_gam2/*'
+    dirpath = f'/lustre/astro/rsx187/polar/warm_L2048_gam2/*'
 
     fnames = glob.glob(dirpath)
     #outpath = f'/lustre/astro/rsx187/isolinescalingdata/dissipationboth/simon_{size}/'
-    outpath = f'/lustre/astro/rsx187/isolinescalingdata/dissipationboth/polar_L2048_gam2/'
+    #outpath = f'/lustre/astro/rsx187/isolinescalingdata/dissipationboth/polar_L2048_gam2/'
+    outpath = f'/lustre/astro/rsx187/isolinescalingdata/dissipationboth/warm_L2048_gam2/'
 
     Path(outpath).mkdir(parents=True, exist_ok=True)
 

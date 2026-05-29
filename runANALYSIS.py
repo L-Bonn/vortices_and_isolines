@@ -23,7 +23,7 @@ import copy
 import sys
 sn = ellipfun('sn')
 from multiprocessing import Pool
-sys.path.append('/groups/astro/rsx187/schrammloewnerevolution/')
+#sys.path.insert(0, '/groups/astro/rsx187/schrammloewnerevolution/')
 import schramm_loewner_evolution as sle
 
 
@@ -590,14 +590,14 @@ if __name__ == '__main__':
     ##OPTIONS
     multi = True # use multiprocessing?
 
-    clean = True # clean out directories (fresh calculation)
+    clean = False # clean out directories (fresh calculation)
     overwrite = False # overwrite existing files?
     
     do_chunks = True # subdivide long traces for statistics purposes (when low on data)
     removeloops = True
-    do_inverse_schwarz_christoffel = False
+    do_inverse_schwarz_christoffel = True
     rescale = 100 # how to rescale trace after inverse schwarz christoffel
-
+    scrange = range(2,100,10)
 
     #type_anal - will look into folders with this name (so you could just as well look at pressure or anything)
     type_anal = 'vorticity'
@@ -641,14 +641,18 @@ if __name__ == '__main__':
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/polar/L2048_gam2/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/polar/test_polar_tt_isc/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/simon_data/*/*')
-    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/q_sample/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/q1_sample/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/q_sample_isc/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/uq_scanq_isc/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/uq_scanq0.05_isc/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/uq_scanq0.*/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/uq_scanq0.1_fss/*3000*')#uq_scanq0.1_xi2
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/uq_scanq0.1_xi2/*')#uq_scanq0.1_xi2
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/backofen/iscAllForcingsFromPaper/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/simon_data/isc_nematic_simulation2048/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/simon_data/nematic_simulation2048/*')
-    #
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/{type_anal}data/polar/warm_L2048_gam2/*')
+    names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/spp/*') 
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/grf3/tianxiangTT/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/pressuredata/colloids_sourav/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/varunBactTurbv2/*')
@@ -657,9 +661,9 @@ if __name__ == '__main__':
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/smukherjee_isc/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/mitomyocinC/*/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/lemma2019/*')
-    names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/deffree_initaligned/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/deffree_initaligned/*')
     #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/hillebrand/*')
-    names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/q_scan/*')
+    #names = glob.glob(f'/lustre/astro/rsx187/isolinescalingdata/vorticitydata/q_scan/*')
 
     #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/vorticitydata/wensink2012/3d_data_piv/*')
     #names = glob.glob('/lustre/astro/rsx187/isolinescalingdata/data-nematic')
@@ -671,6 +675,7 @@ if __name__ == '__main__':
 
     #names = ['/lustre/astro/rsx187/isolinescalingdata/vorticitydata/test_rem_loops_and_isc/critical_percolation_remove_loops_isc/']
     #names = ['/lustre/astro/rsx187/isolinescalingdata/vorticitydata/test_rem_loops_and_isc/critical_percolation_isc/']
+    #names = ["/lustre/astro/rsx187/isolinescalingdata/vorticitydata/critical_percolation/"]
 
     # checks and cleaning
     assert len(names)>0, f'0 names: {names}'
@@ -704,12 +709,12 @@ if __name__ == '__main__':
             FOLDER.remove(f)
             print('removed:', f , flush=True)
 
-    if not overwrite:
-        for n in FOLDER:
-            if os.path.isfile(n+'/correlation.npy'):
-                FOLDER.remove(n)
-                print(n, flush=True)
-    print('n files:', len(FOLDER), flush=True)
+    #if not overwrite:
+    #    for n in FOLDER:
+    #        if os.path.isfile(n+'/correlation.npy'):
+    #            FOLDER.remove(n)
+    #            print(n, flush=True)
+    #print('n files:', len(FOLDER), flush=True)
 
     if clean:
         clean_func(FOLDER) # clean out dest folders
@@ -723,6 +728,10 @@ if __name__ == '__main__':
     if not multi:
         #get trace
         for folder in FOLDER:
+            if not overwrite: 
+                if os.path.isfile(str(folder)+"/SLE_Trace.npy"): 
+                    print(f'passed {folder} SLE_Trace')
+                    continue
             Trace=SLE_Trace([folder, type_anal], removeloops=removeloops)
             # obviously the traces are not all the same length so np.array() doesn't work
             # I'm going to just pad with nan lets see.
@@ -786,7 +795,11 @@ if __name__ == '__main__':
                 lx = ly = max(lx, ly)
                 X_ALL_loops,Y_ALL_loops = inverse_sc_all(X_ALL_loops,Y_ALL_loops, lx, ly, cut=False, rescale=rescale)
             Y_0=[]
-            for i in range (2,10,1):
+            if do_inverse_schwarz_christoffel:
+                yrange = scrange
+            else:
+                yrange = range(2,10,1)
+            for i in yrange:
                 Y_0.append(i+0.1)
             Score_final=[]
             for y0 in Y_0:
@@ -840,11 +853,13 @@ if __name__ == '__main__':
         ncpu=min(int(os.environ['SLURM_CPUS_PER_TASK']), len(FOLDER))
         print(f'ncpu: {ncpu}', flush=True)
         def do_trace(foldertypeanal):
+
             #print(foldertypeanal, flush=True)
             folder, type_anal = foldertypeanal
             if not overwrite:
                 if os.path.isfile(str(folder)+"/SLE_Trace.npy"):
                     return
+            print(f'start trace {foldertypeanal}', flush=True)
 
             Trace=SLE_Trace(foldertypeanal, removeloops=removeloops)
             #print(folder, flush=True)
@@ -874,9 +889,12 @@ if __name__ == '__main__':
         print('done SLE', flush=True)
 
         def do_DF(folder):
+
             if not overwrite:
                 if os.path.isfile(str(folder)+"/df.npy"):
                     return
+            print(f'start df {folder}')
+
             X_ALL_loops,Y_ALL_loops=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
             L_stick,num_sticks_final=df_first(X_ALL_loops,Y_ALL_loops)
             np.save(str(folder)+"/df.npy",np.array([L_stick, *num_sticks_final]))
@@ -902,9 +920,12 @@ if __name__ == '__main__':
 
         cut = 1000
         def do_winding(folder, cut, do_chunks):
+
             if not overwrite:
                 if os.path.isfile(str(folder)+"/winding.npy"):
                     return
+            print(f'start winding {folder}')
+
             loops_to_save=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
             L_list,THETA_list=winding_statistics(loops_to_save, cut, do_chunks)
             np.save(str(folder)+"/winding.npy",np.array([L_list,*THETA_list]))
@@ -916,6 +937,7 @@ if __name__ == '__main__':
         #winding gaussianity
 
         def do_winding_pdf(folder):
+            print(f'start windng pdf {folder}')
             L_list=[80,500]
             for L in L_list:
                 if not overwrite:
@@ -936,6 +958,8 @@ if __name__ == '__main__':
             if not overwrite:
                 if os.path.isfile(str(folder)+"/Left_passage.npy"):
                     return
+            print(f'start left passage {folder}')
+
             X_ALL_loops,Y_ALL_loops=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
             if do_inverse_schwarz_christoffel:
                 # for a square
@@ -948,7 +972,7 @@ if __name__ == '__main__':
                 X_ALL_loops,Y_ALL_loops = inverse_sc_all(X_ALL_loops,Y_ALL_loops, lx, ly, cut=False, rescale=rescale)
             Y_0=[]
             if do_inverse_schwarz_christoffel:
-                yrange = range(3,1000,100)
+                yrange = scrange
             else:
                 yrange = range(2,10,1)
             for i in yrange:
@@ -972,6 +996,8 @@ if __name__ == '__main__':
             if not overwrite:
                 if os.path.isfile(str(folder)+"/noise.npy"):
                     return
+            print(f'start driving {folder}')
+
             loops_to_save_half_plane=np.load(str(folder)+"/SLE_Trace.npy",allow_pickle=True)
             if do_inverse_schwarz_christoffel:
                 X_ALL_loops,Y_ALL_loops = loops_to_save_half_plane
@@ -1000,6 +1026,8 @@ if __name__ == '__main__':
             if not overwrite:
                 if os.path.isfile(str(folder)+"/correlation.npy"):
                     return
+            print(f'start correlation {folder}')
+
             list_t=np.arange(0,20,1)
             lista_tau=np.arange(0,19,1)
             T_sample,W_T_sample=np.load(str(folder)+"/noise.npy",allow_pickle=True)

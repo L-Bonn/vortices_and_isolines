@@ -24,9 +24,11 @@ def writevortpath(path, folder, overwrite=False, scalarjson=False):
     print('starting:', name, flush=True)
     #sys.exit()
     path = path+'/'
-
-    ar = mp.archive.loadarchive(path)
-
+    try:
+        ar = mp.archive.loadarchive(path)
+    except e:
+        print(e)
+        return
     full = ''
     if scalarjson:
         full = 'full'
@@ -67,17 +69,20 @@ def writevortpath(path, folder, overwrite=False, scalarjson=False):
         except AttributeError:
             vx, vy = frame.ux.reshape(LX, LY), frame.uy.reshape(LX, LY)
             vort = mp.base_modules.numdiff.curl2D(vx, vy)
+        if binaryvort:
+            vortbin = vort>0
+            np.save(f'{destpath}/vorticity/frame{i}.npy', vortbin)
+
         if scalarjson:
             with open(f'{destpath}/vorticity/frame{i}.json', 'w') as f:
                 json.dump(vort.tolist(), f)
-        else:
-            vortbin = vort>0
-            np.save(f'{destpath}/vorticity/frame{i}.npy', vortbin)
+
         if velocitynpy:
             np.save(f'{veldestpath}/velocity/vx_frame{i}.npy', vx)
             np.save(f'{veldestpath}/velocity/vy_frame{i}.npy', vy)
 
 overwrite = False
+binaryvort = True
 scalarjson = False
 velocitynpy = False
 print(f"overwrite: {overwrite}, scalarjson: {scalarjson}", flush=True)
@@ -92,12 +97,20 @@ print(f"overwrite: {overwrite}, scalarjson: {scalarjson}", flush=True)
 #folder = "theta_sample"
 #folder = "q_sample"
 #folder = "uq_scanq0.05"
-#folder = "q_scan"
-folder = "deffree_initaligned/"
+#folder = "uq_scanq0.2"
+#folder = "uq_scanq0.1_fss"
+#folder = "uq_scanq0.1_xi2"
+#folder = "/lustre/astro/kpr279/ns2048"
+
+
+#folder = "q1_sample"
+#folder = "deffree_initaligned/"
 #folder = "polar/testgam"
+folder = "polar/warm_L2048_gam2"
+
 datapath = f'/lustre/astro/rsx187/mmout/{folder}/*'
-#datapath = f'/lustre/astro/rsx187/{folder}/*'
-#datapath = f'/lustre/astro/kpr279/{folder}/*/*'
+datapath = f'/lustre/astro/rsx187/{folder}/*'
+#datapath = f'/lustre/astro/kpr279/{folder}/*'
 
 
 
@@ -110,6 +123,7 @@ print(f'n files: {len(paths)}', flush=True)
 
 
 ntasks = min(len(paths), np.floor(int(os.environ['SLURM_CPUS_PER_TASK'])).astype(int))
+print(f'ncpus = {ntasks}')
 #ntasks = 5
 
 argdics = [{'path': path, 'folder': folder, 'overwrite':overwrite, 'scalarjson':scalarjson} for path in paths]

@@ -17,7 +17,10 @@ import massPynpz as mp
 def def_to_array(defects):
     mainlist = []
     for de in defects:
-        mainlist.append([*de['pos'], de['charge'], de['angle']])
+        try:
+            mainlist.append([*de['pos'], de['charge'], de['angle']])
+        except KeyError: # polar dont have angle
+            mainlist.append([*de['pos'], de['charge'], 0])
     return np.array(mainlist)
 
 def run_archive(name, out, write_each_frame=False, overwrite=False):
@@ -53,8 +56,12 @@ def run_archive(name, out, write_each_frame=False, overwrite=False):
         except FileNotFoundError:
             continue
         try:
-            defects = adp.defectlist_nematic_from_frame(frame, lx, ly)
-        except AttributeError:
+            if polar_or_nematic == 'nematic':
+                defects = adp.defectlist_nematic_from_frame(frame, lx, ly)
+            if polar_or_nematic == 'polar':
+                defects = adp.defectlist_polar_from_frame(frame, lx, ly)
+        except AttributeError as e:
+            print(e, flush=True)
             continue
 
         #print('first defect', defects[0], flush=True)
@@ -87,11 +94,13 @@ if __name__ == '__main__':
 
     overwrite=False
     write_each_frame=True
+    polar_or_nematic = 'polar'
 
     size = 2048
     #path = "/lustre/astro/rsx187/mmout/" + "uq_sample/"
     #path = "/lustre/astro/jayeeta/aniso/datas/size_1024/"
     path = f"/lustre/astro/kpr279/ns{size}*/"
+    path = "/lustre/astro/rsx187/polar/L2048_gam2/"
     #path = "/lustre/astro/jayeeta/aniso/datas/size_2048/"
     #path = "/lustre/astro/robinboe/HiddenTransitions/"
     #path = "/lustre/astro/rsx187/mmout/" + "theta_sample/"
@@ -100,16 +109,17 @@ if __name__ == '__main__':
     #out = "/lustre/astro/rsx187/durbig/jayeeta_data/size_1024/"
     #out = f"/groups/astro/rsx187/mass/dur/simon_data/ns{size}/"
     #out = f"/lustre/astro/rsx187/durbig/simon_data_local/ns{size}"
-    out = f"/lustre/astro/rsx187/isolinescalingdata/fullvorticitydata/simon_data/nematic_simulation{size}"
+    #out = f"/lustre/astro/rsx187/isolinescalingdata/fullvorticitydata/simon_data/nematic_simulation{size}"
+    out = f"/lustre/astro/rsx187/isolinescalingdata/fullvorticitydata/polar/L2048_gam2"
 
 
     Path(out).mkdir(parents=True, exist_ok=True)
 
 
-    names = glob.glob(f'{path}*/*')
+    names = glob.glob(f'{path}*')
 
     names = [n for n in names if '.dat' not in n]
-    names = [n for n in names if 'counter_0' in n]
+    #names = [n for n in names if 'counter_0' in n]
     #names = [names[20]]
 
     
